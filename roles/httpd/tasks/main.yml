@@ -1,0 +1,35 @@
+---
+# tasks file for httpd
+  - name: install web components
+      yum: name={{item}} state=present update_cache=yes
+      with_items:
+        - httpd
+        - mod_wsgi
+      
+    - name: install tools
+      yum: name={{item}} state=present update_cache=yes
+      with_items:
+        -httplib2
+
+    - name: Create Directory
+      file: path=/etc/httpd/sites-available state=directory mode=0755
+      file: path=/etc/httpd/sites-enabled state=directory mode=0755
+      notify: restart httpd
+    
+    - name: add a new line at the end of the file
+      lineinfile: dest=/etc/httpd/conf/httpd.conf
+                  regexp=''
+                  insertafter=EOF
+                  line='WSGISocketPrefix /var/run/wsgi'
+      lineinfile: dest=/etc/httpd/conf/httpd.conf
+                  regexp=''
+                  insertafter=EOF
+                  line='Include sites-available/*.conf'
+
+    - name: de-active default httpd site
+      file: path=/etc/httpd/sites-enabled/000-default.conf state=absent
+      notify: restart httpd
+
+    - name: ensure httpd started
+      service: name=httpd state=started enabled=yes 
+    
